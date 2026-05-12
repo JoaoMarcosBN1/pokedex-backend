@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokédex IA — Gemini</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="scanline-overlay"></div>
+    <div class="bg-grid"></div>
+
+    <div class="app-wrapper">
+
+        <!-- Header -->
+        <header class="pokedex-header">
+            <div class="header-led-strip"></div>
+            <div class="header-inner">
+                <div class="header-left">
+                    <div class="pokeball-icon">
+                        <div class="pb-top"></div>
+                        <div class="pb-band"><div class="pb-btn"></div></div>
+                        <div class="pb-bottom"></div>
+                    </div>
+                    <div class="header-text">
+                        <span class="header-label">SISTEMA DE ANÁLISE</span>
+                        <h1 class="header-title">POKÉDEX<span class="title-ai">·IA</span></h1>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="status-dot"></div>
+                    <span class="status-text">GEMINI ONLINE</span>
+                    <div class="header-ver">v2.4.1</div>
+                </div>
+            </div>
+            <div class="header-led-strip bottom"></div>
+        </header>
+
+        <!-- Main layout -->
+        <main class="main-layout">
+
+            <!-- Chat panel -->
+            <section class="chat-panel" aria-label="Histórico de análise">
+                <div class="panel-header">
+                    <i class="fa-solid fa-database panel-icon"></i>
+                    <span>LOG DE ANÁLISE</span>
+                    <div class="panel-header-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+
+                <div id="chat" role="log" aria-live="polite">
+                    <!-- Welcome state -->
+                    <div class="welcome-state" id="welcome">
+                        <div class="welcome-pokeball">
+                            <i class="fa-solid fa-circle-half-stroke"></i>
+                        </div>
+                        <p class="welcome-title">AGUARDANDO CONSULTA</p>
+                        <p class="welcome-sub">Digite o nome de um Pokémon para iniciar a análise completa via Gemini AI.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Side panel -->
+            <aside class="side-panel">
+
+                <!-- Input area -->
+                <div class="input-module">
+                    <div class="panel-header">
+                        <i class="fa-solid fa-magnifying-glass panel-icon"></i>
+                        <span>BUSCA</span>
+                    </div>
+                    <div class="input-container">
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-terminal input-prefix-icon"></i>
+                            <input
+                                type="text"
+                                id="pergunta"
+                                placeholder="Ex: Charizard, Mewtwo..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+                        </div>
+                        <button id="btn-buscar" onclick="buscarPokemon()" aria-label="Buscar Pokémon">
+                            <span class="btn-text">ANALISAR</span>
+                            <i class="fa-solid fa-bolt btn-icon"></i>
+                        </button>
+                    </div>
+                    <div class="quick-searches">
+                        <span class="qs-label">Populares:</span>
+                        <button class="qs-tag" onclick="quickSearch('Pikachu')">Pikachu</button>
+                        <button class="qs-tag" onclick="quickSearch('Mewtwo')">Mewtwo</button>
+                        <button class="qs-tag" onclick="quickSearch('Eevee')">Eevee</button>
+                        <button class="qs-tag" onclick="quickSearch('Gengar')">Gengar</button>
+                    </div>
+                </div>
+
+                <!-- Stats panel (shown when pokemon is loaded) -->
+                <div class="stats-module" id="stats-panel" style="display:none">
+                    <div class="panel-header">
+                        <i class="fa-solid fa-chart-radar panel-icon"></i>
+                        <span>ESTATÍSTICAS</span>
+                    </div>
+                    <div id="stats-content"></div>
+                </div>
+
+                <!-- Type guide -->
+                <div class="type-guide-module">
+                    <div class="panel-header">
+                        <i class="fa-solid fa-tags panel-icon"></i>
+                        <span>TIPOS</span>
+                    </div>
+                    <div class="type-grid">
+                        <span class="type-pill" data-type="fire">Fogo</span>
+                        <span class="type-pill" data-type="water">Água</span>
+                        <span class="type-pill" data-type="grass">Planta</span>
+                        <span class="type-pill" data-type="electric">Elétrico</span>
+                        <span class="type-pill" data-type="psychic">Psíquico</span>
+                        <span class="type-pill" data-type="ghost">Fantasma</span>
+                        <span class="type-pill" data-type="dragon">Dragão</span>
+                        <span class="type-pill" data-type="ice">Gelo</span>
+                        <span class="type-pill" data-type="fighting">Lutador</span>
+                        <span class="type-pill" data-type="poison">Veneno</span>
+                        <span class="type-pill" data-type="normal">Normal</span>
+                        <span class="type-pill" data-type="rock">Pedra</span>
+                    </div>
+                </div>
+
+            </aside>
+        </main>
+
+    </div>
+
+    <script>
+        // ─── Type color map ───────────────────────────────────────────
+        const TYPE_COLORS = {
+            fire:     { bg: '#ff6b35', glow: '#ff6b35', text: '#fff' },
+            water:    { bg: '#4a9eff', glow: '#4a9eff', text: '#fff' },
+            grass:    { bg: '#5cb85c', glow: '#5cb85c', text: '#fff' },
+            electric: { bg: '#f7c948', glow: '#f7c948', text: '#1a1a2e' },
+            psychic:  { bg: '#e91e8c', glow: '#e91e8c', text: '#fff' },
+            ghost:    { bg: '#7b68ee', glow: '#7b68ee', text: '#fff' },
+            dragon:   { bg: '#6a5acd', glow: '#6a5acd', text: '#fff' },
+            ice:      { bg: '#87ceeb', glow: '#87ceeb', text: '#1a1a2e' },
+            fighting: { bg: '#c0392b', glow: '#c0392b', text: '#fff' },
+            poison:   { bg: '#9b59b6', glow: '#9b59b6', text: '#fff' },
+            normal:   { bg: '#95a5a6', glow: '#95a5a6', text: '#fff' },
+            rock:     { bg: '#8B7355', glow: '#8B7355', text: '#fff' },
+            ground:   { bg: '#d4a017', glow: '#d4a017', text: '#1a1a2e' },
+            bug:      { bg: '#8BC34A', glow: '#8BC34A', text: '#fff' },
+            flying:   { bg: '#87CEEB', glow: '#87CEEB', text: '#1a1a2e' },
+            steel:    { bg: '#B0BEC5', glow: '#B0BEC5', text: '#1a1a2e' },
+            dark:     { bg: '#37474F', glow: '#546E7A', text: '#fff' },
+            fairy:    { bg: '#F48FB1', glow: '#F48FB1', text: '#1a1a2e' },
+        };
+
+        const TYPE_PT = {
+            fire:'fogo', water:'água', grass:'planta', electric:'elétrico',
+            psychic:'psíquico', ghost:'fantasma', dragon:'dragão', ice:'gelo',
+            fighting:'lutador', poison:'veneno', normal:'normal', rock:'pedra',
+            ground:'terra', bug:'inseto', flying:'voador', steel:'aço',
+            dark:'sombrio', fairy:'fada'
+        };
+
+        // ─── Helpers ──────────────────────────────────────────────────
+        function getTypeColor(type) {
+            return TYPE_COLORS[type?.toLowerCase()] || { bg: '#546E7A', glow: '#546E7A', text: '#fff' };
+        }
+
+        function formatStatName(stat) {
+            const map = {
+                'hp': 'HP', 'attack': 'ATK', 'defense': 'DEF',
+                'special-attack': 'SP.ATK', 'special-defense': 'SP.DEF', 'speed': 'SPD'
+            };
+            return map[stat] || stat.toUpperCase();
+        }
+
+        function removeWelcome() {
+            const w = document.getElementById('welcome');
+            if (w) w.remove();
+        }
+
+        function quickSearch(name) {
+            document.getElementById('pergunta').value = name;
+            buscarPokemon();
+        }
+
+        // ─── Loading message ──────────────────────────────────────────
+        function appendLoading(id) {
+            const chat = document.getElementById('chat');
+            const div = document.createElement('div');
+            div.className = 'loading-msg';
+            div.id = id;
+            div.innerHTML = `
+                <div class="loading-inner">
+                    <div class="loading-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <span class="loading-text">PROCESSANDO ANÁLISE GEMINI...</span>
+                </div>`;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // ─── Render pokemon card ──────────────────────────────────────
+        function renderPokemonCard(data) {
+            const primaryType = (data.tipos && data.tipos[0]) ? data.tipos[0].toLowerCase() : 'normal';
+            const tc = getTypeColor(primaryType);
+
+            const typeBadges = (data.tipos || []).map(t => {
+                const c = getTypeColor(t.toLowerCase());
+                return `<span class="type-badge" style="background:${c.bg};color:${c.text};box-shadow:0 0 8px ${c.glow}44">${(TYPE_PT[t.toLowerCase()] || t).toUpperCase()}</span>`;
+            }).join('');
+
+            const statsHTML = (data.stats || []).map(s => {
+                const pct = Math.min(100, Math.round((s.base / 255) * 100));
+                return `
+                <div class="stat-row">
+                    <span class="stat-name">${formatStatName(s.name)}</span>
+                    <span class="stat-val">${s.base}</span>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar-fill" style="width:${pct}%;background:${tc.bg};box-shadow:0 0 6px ${tc.glow}88" data-pct="${pct}"></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Update side panel
+            const statsPanel = document.getElementById('stats-panel');
+            const statsContent = document.getElementById('stats-content');
+            statsContent.innerHTML = statsHTML;
+            statsPanel.style.display = 'block';
+
+            // Animate bars after insert
+            setTimeout(() => {
+                document.querySelectorAll('.stat-bar-fill').forEach(bar => {
+                    bar.style.transition = 'width 0.8s cubic-bezier(0.4,0,0.2,1)';
+                });
+            }, 50);
+
+            return `
+            <div class="pokemon-card" style="--type-color:${tc.bg};--type-glow:${tc.glow}">
+                <div class="card-top-stripe" style="background:linear-gradient(90deg,${tc.bg}22,${tc.bg}55,${tc.bg}22)"></div>
+                <div class="card-body">
+                    <div class="card-image-col">
+                        <div class="card-img-frame" style="border-color:${tc.bg}66;box-shadow:0 0 20px ${tc.glow}44 inset, 0 0 30px ${tc.glow}22">
+                            <img src="${data.imagem}" alt="${data.nome}" class="card-img" loading="lazy">
+                            <div class="card-img-reflection"></div>
+                        </div>
+                        <div class="card-number">#${String(data.id || '???').padStart(3,'0')}</div>
+                    </div>
+                    <div class="card-info-col">
+                        <div class="card-name-row">
+                            <h2 class="card-name">${(data.nome || '').toUpperCase()}</h2>
+                        </div>
+                        <div class="card-types">${typeBadges}</div>
+                        <div class="card-meta">
+                            ${data.altura ? `<div class="meta-item"><i class="fa-solid fa-ruler-vertical"></i><span>${(data.altura/10).toFixed(1)}m</span></div>` : ''}
+                            ${data.peso ? `<div class="meta-item"><i class="fa-solid fa-weight-hanging"></i><span>${(data.peso/10).toFixed(1)}kg</span></div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // ─── Render Gemini holographic panel ─────────────────────────
+        function renderGeminiPanel(texto) {
+            return `
+            <div class="gemini-panel">
+                <div class="gemini-header">
+                    <div class="gemini-header-left">
+                        <div class="gemini-logo-dot"></div>
+                        <span class="gemini-label">PROFESSOR GEMINI — ANÁLISE IA</span>
+                    </div>
+                    <div class="gemini-header-right">
+                        <span class="gemini-model">GEMINI PRO</span>
+                        <div class="gemini-pulse"></div>
+                    </div>
+                </div>
+                <div class="gemini-scan-line"></div>
+                <div class="gemini-body">
+                    <div class="gemini-cursor-line"></div>
+                    <p class="gemini-text">${texto}</p>
+                </div>
+                <div class="gemini-footer">
+                    <span><i class="fa-solid fa-shield-halved"></i> DADOS VERIFICADOS</span>
+                    <span><i class="fa-solid fa-clock"></i> ${new Date().toLocaleTimeString('pt-br')}</span>
+                </div>
+            </div>`;
+        }
+
+        // ─── Main search function ─────────────────────────────────────
+        async function buscarPokemon() {
+            const input = document.getElementById('pergunta');
+            const chat = document.getElementById('chat');
+            const btn = document.getElementById('btn-buscar');
+            const nome = input.value.trim();
+            if (!nome) return;
+
+            removeWelcome();
+            input.value = '';
+            btn.disabled = true;
+            btn.classList.add('loading');
+
+            // User bubble
+            const userDiv = document.createElement('div');
+            userDiv.className = 'user-msg';
+            userDiv.innerHTML = `
+                <div class="user-msg-inner">
+                    <i class="fa-solid fa-user-astronaut user-avatar"></i>
+                    <div class="user-bubble">
+                        <span class="user-query-label">CONSULTA</span>
+                        <span class="user-query-text">${nome}</span>
+                    </div>
+                </div>`;
+            chat.appendChild(userDiv);
+            chat.scrollTop = chat.scrollHeight;
+
+            const loadId = 'loading-' + Date.now();
+            appendLoading(loadId);
+
+            try {
+                const response = await fetch('/pokemon', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome })
+                });
+                const data = await response.json();
+
+                document.getElementById(loadId)?.remove();
+
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result-block';
+
+                if (data.erro) {
+                    resultDiv.innerHTML = `
+                        <div class="error-msg">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>${data.erro}</span>
+                        </div>`;
+                } else {
+                    resultDiv.innerHTML = renderPokemonCard(data) + renderGeminiPanel(data.texto);
+                    // Animate card in
+                    setTimeout(() => resultDiv.querySelector('.pokemon-card')?.classList.add('visible'), 50);
+                    setTimeout(() => resultDiv.querySelector('.gemini-panel')?.classList.add('visible'), 200);
+                }
+
+                chat.appendChild(resultDiv);
+
+            } catch (err) {
+                document.getElementById(loadId)?.remove();
+                const errDiv = document.createElement('div');
+                errDiv.className = 'result-block';
+                errDiv.innerHTML = `
+                    <div class="error-msg">
+                        <i class="fa-solid fa-wifi"></i>
+                        <span>Falha na conexão com o servidor.</span>
+                    </div>`;
+                chat.appendChild(errDiv);
+            }
+
+            btn.disabled = false;
+            btn.classList.remove('loading');
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // ─── Enter key ────────────────────────────────────────────────
+        document.getElementById('pergunta').addEventListener('keypress', e => {
+            if (e.key === 'Enter') buscarPokemon();
+        });
+    </script>
+</body>
+</html>
