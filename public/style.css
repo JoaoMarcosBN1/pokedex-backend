@@ -879,3 +879,34 @@ button#btn-buscar.loading .btn-text::after {
     .card-types { justify-content: center; }
     .status-text { display: none; }
 }
+
+.tabela-pokemon {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background-color: #fff;
+    border-radius: 12px;
+    overflow: hidden; /* Para as bordas arredondadas funcionarem */
+}
+
+.tabela-pokemon th {
+    background-color: #ffcb05; /* Amarelo Pokémon */
+    color: #3d7dca;
+    padding: 12px;
+    text-align: left;
+}
+
+.tabela-pokemon td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    color: #555;
+    font-size: 14px;
+}
+
+.tabela-pokemon tr:last-child td {
+    border-bottom: none;
+}
+
+.tabela-pokemon tr:hover {
+    background-color: #f9f9f9;
+}

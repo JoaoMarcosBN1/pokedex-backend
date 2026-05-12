@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Sua chave de API
-const genAI = new GoogleGenerativeAI("AIzaSyAHR2LAsawETTrF26crexVAWrr9v0QAtkg");
+const genAI = new GoogleGenerativeAI("AIzaSyD4SGcFQDC1JbCjMyqA-S5nDRYMfEICbKo");
 
 app.post('/pokemon', async (req, res) => {
     const { nome } = req.body;
@@ -28,7 +28,13 @@ app.post('/pokemon', async (req, res) => {
 
         // 2. Tradução do Gemini (Corrigido: modelo alterado para gemini-1.5-flash)
         const modelo = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
-        const prompt = `Você é o Professor Carvalho. Descreva brevemente o Pokémon ${dadosSimples.nome}, que é do tipo ${dadosSimples.tipos}. Seja entusiasmado!`;
+        const prompt =`Você é um cientista Pokémon. 
+Analise o Pokémon ${dadosSimples.nome} (Tipo: ${dadosSimples.tipos}).
+Crie uma tabela comparativa simples sobre ele e sua evolução (ou curiosidades se não evoluir).
+Retorne a resposta EXCLUSIVAMENTE em formato de tabela HTML, usando as classes 'tabela-pokemon'.
+Inclua colunas como: Característica, Base e Evolução.
+Depois da tabela, escreva um parágrafo de 3 linhas justificado sobre o comportamento dele.
+E ao final, sugerir um time de outros 3 Pokémon que combinem com ele para uma batalha`;
         
         const resultado = await modelo.generateContent(prompt);
         const respostaAI = await resultado.response;
